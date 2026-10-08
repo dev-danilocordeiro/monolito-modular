@@ -24,9 +24,7 @@ import org.springframework.transaction.support.AbstractPlatformTransactionManage
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
-@RestClientTest(
-    components = TurmasRemoto.class,
-    properties = {"escola.turmas.modo=remoto", "escola.turmas.url=http://servico-turmas"})
+@RestClientTest(components = TurmasRemoto.class, properties = "escola.turmas.url=http://servico-turmas")
 class TurmasRemotoTest {
 
     @Autowired TurmasApi turmas;

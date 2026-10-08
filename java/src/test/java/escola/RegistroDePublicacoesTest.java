@@ -11,21 +11,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
+import escola.turmas.TurmasApi;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
-@TestPropertySource(properties = "escola.turmas.modo=local")
 class RegistroDePublicacoesTest {
 
     @Autowired MatriculaService matriculas;
     @Autowired JdbcClient jdbc;
+    @MockitoBean TurmasApi turmas;   // turmas é outro serviço
 
     @Test
     void cadaOuvinteGanhaUmaPublicacaoQueEConcluidaQuandoEleTermina() {
         var turma = UUID.randomUUID();
-        jdbc.sql("INSERT INTO turmas.turmas (id, ano_letivo, capacidade) VALUES (:id, 2027, 10)").param("id", turma).update();
         var estudante = UUID.randomUUID();
 
         matriculas.matricular(new NovaMatricula(estudante, turma, 2027, "Ana"));

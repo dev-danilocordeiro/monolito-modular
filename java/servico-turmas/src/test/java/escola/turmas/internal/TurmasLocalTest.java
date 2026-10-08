@@ -17,21 +17,19 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.modulith.test.AssertablePublishedEvents;
 
 @ApplicationModuleTest
 @Import(TestcontainersConfiguration.class)
-@TestPropertySource(properties = "escola.turmas.modo=local")
 class TurmasLocalTest {
 
     @Autowired TurmasApi turmas;
     @Autowired JdbcClient jdbc;
 
     @Test
-    void comModoLocalAImplementacaoEOTurmasLocal() {
+    void noServicoAImplementacaoEOTurmasLocal() {
         assertThat(turmas).isInstanceOf(TurmasLocal.class);
     }
 

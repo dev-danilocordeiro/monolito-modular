@@ -17,34 +17,32 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
+import escola.turmas.TurmasApi;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.testcontainers.kafka.KafkaContainer;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
-@TestPropertySource(properties = "escola.turmas.modo=local")
 class EventosNoBrokerTest {
 
     @Autowired MatriculaService matriculas;
     @Autowired JdbcClient jdbc;
+    @MockitoBean TurmasApi turmas;   // turmas é outro serviço
     @Autowired KafkaContainer kafka;
 
     @Test
-    void eventosExternalizadosChegamNoKafkaEOsOuvintesInternosContinuamRecebendo() {
-        var turma = UUID.randomUUID();
-        jdbc.sql("INSERT INTO turmas.turmas (id, ano_letivo, capacidade) VALUES (:id, 2027, 1)").param("id", turma).update();
+    void matriculaConfirmadaChegaNoKafkaEOOuvinteInternoContinuaRecebendo() {
         var estudante = UUID.randomUUID();
 
-        matriculas.matricular(new NovaMatricula(estudante, turma, 2027, "Ana"));   // ocupa a única vaga
+        matriculas.matricular(new NovaMatricula(estudante, UUID.randomUUID(), 2027, "Ana"));
 
         var recebidas = new ArrayList<String>();
         try (var consumidor = consumidor()) {
-            consumidor.subscribe(List.of("escola.turmas.vagas-esgotadas", "escola.matriculas.confirmadas"));
+            consumidor.subscribe(List.of("escola.matriculas.confirmadas"));
             await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
                 consumidor.poll(Duration.ofMillis(200)).forEach(r -> recebidas.add(r.topic() + " " + r.value()));
                 assertThat(recebidas)
-                    .anyMatch(m -> m.startsWith("escola.turmas.vagas-esgotadas ") && m.contains(turma.toString()))
                     .anyMatch(m -> m.startsWith("escola.matriculas.confirmadas ") && m.contains(estudante.toString()));
             });
         }
