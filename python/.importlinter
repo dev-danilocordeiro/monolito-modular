@@ -1,0 +1,49 @@
+[importlinter]
+root_package = escola
+# Necessário para o contrato dominio-puro, que proíbe pacotes externos
+include_external_packages = True
+
+# Regra 3: camadas dentro de cada módulo
+[importlinter:contract:camadas]
+name = Cada módulo é api -> infrastructure -> application -> domain
+type = layers
+layers =
+    api
+    infrastructure
+    application
+    domain
+containers =
+    escola.modules.matricula
+    escola.modules.turmas
+
+# Regra 3: domínio puro
+[importlinter:contract:dominio-puro]
+name = Domínio não importa framework
+type = forbidden
+source_modules =
+    escola.modules.*.domain
+forbidden_modules =
+    fastapi
+    sqlalchemy
+    pydantic
+
+# Regra 1: só pela fachada
+[importlinter:contract:fronteira-matricula]
+name = matricula só alcança turmas pelo public.py
+type = forbidden
+source_modules =
+    escola.modules.matricula
+forbidden_modules =
+    escola.modules.turmas.api
+    escola.modules.turmas.application
+    escola.modules.turmas.domain
+    escola.modules.turmas.infrastructure
+allow_indirect_imports = True
+
+[importlinter:contract:turmas-nao-conhece-matricula]
+name = turmas não depende de matricula
+type = forbidden
+source_modules =
+    escola.modules.turmas
+forbidden_modules =
+    escola.modules.matricula
