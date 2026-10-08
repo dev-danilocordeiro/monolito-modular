@@ -2,7 +2,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     java
-    id("org.springframework.boot") version "4.1.1"
+    id("org.springframework.boot")
 }
 
 java {
@@ -21,10 +21,10 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
-    implementation("org.springframework.modulith:spring-modulith-starter-core")
-    implementation("org.springframework.modulith:spring-modulith-starter-jdbc") // registro de publicações
     implementation("org.springframework.boot:spring-boot-starter-kafka")
-    implementation("org.springframework.modulith:spring-modulith-events-kafka")   // @Externalized
+    implementation("org.springframework.modulith:spring-modulith-starter-core")
+    implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
+    implementation("org.springframework.modulith:spring-modulith-events-kafka")
     implementation("org.springframework.boot:spring-boot-starter-flyway")   // ordena as migrations antes do registro de publicações
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
@@ -39,4 +39,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Só o jar executável, com nome fixo para o Dockerfile
+tasks.jar {
+    enabled = false
+}
+
+tasks.bootJar {
+    archiveFileName = "servico-turmas.jar"
 }
