@@ -21,9 +21,12 @@ public class MatriculaService {
 
     @Transactional
     public Matricula matricular(NovaMatricula pedido) {
-        turmas.reservarVaga(pedido.turmaId());                 // chamada: precisa da resposta
-        var matricula = matriculas.save(Matricula.confirmada(pedido));
-        eventos.publishEvent(new MatriculaConfirmada(          // evento: ninguém espera
+        var matricula = Matricula.confirmada(pedido);
+        // O id da matrícula identifica esta tentativa e vira a chave da reserva:
+        // um retry da mesma tentativa nunca reserva duas vagas.
+        turmas.reservarVaga(pedido.turmaId(), matricula.id());   // chamada: precisa da resposta
+        matriculas.save(matricula);
+        eventos.publishEvent(new MatriculaConfirmada(            // evento: ninguém espera
             matricula.estudanteId(), pedido.turmaId(), pedido.anoLetivo(), pedido.nomeSocial()));
         return matricula;
     }

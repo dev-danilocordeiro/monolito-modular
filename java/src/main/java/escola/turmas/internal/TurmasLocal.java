@@ -1,9 +1,11 @@
 package escola.turmas.internal;
 
+import escola.turmas.ReservaConflitante;
 import escola.turmas.TurmaNaoEncontrada;
 import escola.turmas.TurmaSemVaga;
 import escola.turmas.TurmasApi;
 import escola.turmas.VagasEsgotadas;
+import escola.turmas.internal.Reserva.Situacao;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,9 +26,14 @@ class TurmasLocal implements TurmasApi {
 
     @Override
     @Transactional
-    public void reservarVaga(UUID turmaId) {
-        Turma turma = turmas.ocuparVaga(turmaId)
-            .orElseThrow(() -> turmas.existe(turmaId) ? new TurmaSemVaga(turmaId) : new TurmaNaoEncontrada(turmaId));
+    public void reservarVaga(UUID turmaId, UUID reservaId) {
+        exigeTurma(turmaId);
+        if (!turmas.registrar(new Reserva(reservaId, turmaId, Situacao.RESERVADA))) {
+            confereRepeticao(reservaId, turmaId, Situacao.RESERVADA);   // mesma chave: a vaga já foi reservada
+            return;
+        }
+        // Sem vaga, a exceção desfaz a transação e a reserva gravada acima vai junto.
+        Turma turma = turmas.ocuparVaga(turmaId).orElseThrow(() -> new TurmaSemVaga(turmaId));
         if (turma.lotada()) {
             eventos.publishEvent(new VagasEsgotadas(turma.id(), turma.anoLetivo()));
         }
@@ -34,9 +41,31 @@ class TurmasLocal implements TurmasApi {
 
     @Override
     @Transactional
-    public void liberarVaga(UUID turmaId) {
-        if (!turmas.desocuparVaga(turmaId) && !turmas.existe(turmaId)) {
+    public void liberarVaga(UUID turmaId, UUID reservaId) {
+        exigeTurma(turmaId);
+        if (turmas.registrar(new Reserva(reservaId, turmaId, Situacao.LIBERADA))) {
+            return;   // a reserva nunca chegou: fica registrada como liberada, e se chegar depois é recusada
+        }
+        if (turmas.marcarLiberada(reservaId)) {
+            turmas.desocuparVaga(turmaId);
+            return;
+        }
+        confereRepeticao(reservaId, turmaId, Situacao.LIBERADA);       // mesma chave: a vaga já foi devolvida
+    }
+
+    private void exigeTurma(UUID turmaId) {
+        if (!turmas.existe(turmaId)) {
             throw new TurmaNaoEncontrada(turmaId);
+        }
+    }
+
+    private void confereRepeticao(UUID reservaId, UUID turmaId, Situacao esperada) {
+        var existente = turmas.reserva(reservaId);
+        if (!existente.turmaId().equals(turmaId)) {
+            throw new ReservaConflitante(reservaId, "a chave já foi usada para a turma " + existente.turmaId());
+        }
+        if (existente.situacao() != esperada) {
+            throw new ReservaConflitante(reservaId, "a reserva já está " + existente.situacao());
         }
     }
 }

@@ -21,6 +21,7 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    implementation("org.springframework.boot:spring-boot-starter-restclient")      // TurmasRemoto
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jdbc") // registro de publicações
     implementation("org.springframework.boot:spring-boot-starter-kafka")
@@ -30,6 +31,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-restclient-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
@@ -39,4 +41,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Só o jar executável, com nome fixo para os scripts de ponta a ponta
+tasks.jar {
+    enabled = false
+}
+
+tasks.bootJar {
+    archiveFileName = "escola.jar"
 }

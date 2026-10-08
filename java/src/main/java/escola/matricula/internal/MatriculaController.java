@@ -3,6 +3,7 @@ package escola.matricula.internal;
 import escola.matricula.Matricula;
 import escola.matricula.MatriculaService;
 import escola.matricula.NovaMatricula;
+import escola.turmas.ReservaConflitante;
 import escola.turmas.TurmaNaoEncontrada;
 import escola.turmas.TurmaSemVaga;
 import org.springframework.dao.DuplicateKeyException;
@@ -29,7 +30,7 @@ class MatriculaController {
         return matriculas.matricular(pedido);
     }
 
-    @ExceptionHandler({TurmaSemVaga.class, DuplicateKeyException.class})
+    @ExceptionHandler({TurmaSemVaga.class, DuplicateKeyException.class, ReservaConflitante.class})
     ProblemDetail conflito(RuntimeException erro) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, erro.getMessage());
     }

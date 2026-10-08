@@ -3,7 +3,11 @@ package escola.turmas.http;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import escola.TestcontainersConfiguration;
+import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,36 +40,96 @@ class TurmasControllerTest {
     void reservaOcupaUmaVagaERespondeSemCorpo() {
         var turma = turmaComCapacidade(2);
 
-        assertThat(post("/turmas/{id}/reservas", turma)).isEqualTo(204);
+        assertThat(reservar(turma, UUID.randomUUID())).isEqualTo(204);
         assertThat(ocupadas(turma)).isEqualTo(1);
     }
 
     @Test
     void turmaLotadaResponde409() {
         var turma = turmaComCapacidade(1);
-        post("/turmas/{id}/reservas", turma);
+        reservar(turma, UUID.randomUUID());
 
-        assertThat(post("/turmas/{id}/reservas", turma)).isEqualTo(409);
+        assertThat(reservar(turma, UUID.randomUUID())).isEqualTo(409);
         assertThat(ocupadas(turma)).isEqualTo(1);
     }
 
     @Test
     void turmaInexistenteResponde404() {
-        assertThat(post("/turmas/{id}/reservas", UUID.randomUUID())).isEqualTo(404);
+        assertThat(reservar(UUID.randomUUID(), UUID.randomUUID())).isEqualTo(404);
     }
 
     @Test
-    void liberacaoDevolveAVaga() {
-        var turma = turmaComCapacidade(1);
-        post("/turmas/{id}/reservas", turma);
+    void reenviarAMesmaChaveResponde204SemOcuparOutraVaga() {
+        var turma = turmaComCapacidade(5);
+        var chave = UUID.randomUUID();
 
-        assertThat(post("/turmas/{id}/liberacoes", turma)).isEqualTo(204);
-        assertThat(ocupadas(turma)).isZero();
+        assertThat(reservar(turma, chave)).isEqualTo(204);
+        assertThat(reservar(turma, chave)).isEqualTo(204);
+        assertThat(ocupadas(turma)).isEqualTo(1);
     }
 
-    private int post(String caminho, UUID turma) {
-        return http.post().uri(caminho, turma)
-            .header("Idempotency-Key", UUID.randomUUID().toString())
+    @Test
+    void reenviosSimultaneosDaMesmaChaveOcupamUmaVagaSo() throws Exception {
+        var turma = turmaComCapacidade(50);
+        var chave = UUID.randomUUID();
+        var largada = new CountDownLatch(1);
+        var respostas = new ArrayList<Future<Integer>>();
+
+        try (var executor = Executors.newFixedThreadPool(10)) {
+            for (int i = 0; i < 10; i++) {
+                respostas.add(executor.submit(() -> {
+                    largada.await();
+                    return reservar(turma, chave);
+                }));
+            }
+            largada.countDown();
+        }
+
+        for (var resposta : respostas) {
+            assertThat(resposta.get()).isEqualTo(204);
+        }
+        assertThat(ocupadas(turma)).isEqualTo(1);
+    }
+
+    @Test
+    void chaveReaproveitadaParaOutraTurmaResponde422() {
+        var chave = UUID.randomUUID();
+        reservar(turmaComCapacidade(5), chave);
+
+        var outra = turmaComCapacidade(5);
+        assertThat(reservar(outra, chave)).isEqualTo(422);
+        assertThat(ocupadas(outra)).isZero();
+    }
+
+    @Test
+    void chaveQueNaoEUuidResponde400() {
+        var status = http.post().uri("/turmas/{id}/reservas", turmaComCapacidade(1))
+            .header("Idempotency-Key", "nao-e-uuid")
+            .retrieve().toBodilessEntity().getStatusCode().value();
+
+        assertThat(status).isEqualTo(400);
+    }
+
+    @Test
+    void liberarDevolveAVagaEDeleteRepetidoNaoDevolveDeNovo() {
+        var turma = turmaComCapacidade(5);
+        reservar(turma, UUID.randomUUID());
+        var chave = UUID.randomUUID();
+        reservar(turma, chave);
+
+        assertThat(liberar(turma, chave)).isEqualTo(204);
+        assertThat(liberar(turma, chave)).isEqualTo(204);
+        assertThat(ocupadas(turma)).isEqualTo(1);
+    }
+
+    private int reservar(UUID turma, UUID chave) {
+        return http.post().uri("/turmas/{id}/reservas", turma)
+            .header("Idempotency-Key", chave.toString())
+            .retrieve().toBodilessEntity().getStatusCode().value();
+    }
+
+    private int liberar(UUID turma, UUID chave) {
+        return http.delete().uri("/turmas/{id}/reservas/{reserva}", turma, chave)
             .retrieve().toBodilessEntity().getStatusCode().value();
     }
 

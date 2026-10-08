@@ -1,5 +1,6 @@
 package escola.turmas.http;
 
+import escola.turmas.ReservaConflitante;
 import escola.turmas.TurmaNaoEncontrada;
 import escola.turmas.TurmaSemVaga;
 import escola.turmas.TurmasApi;
@@ -7,6 +8,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,15 +28,14 @@ class TurmasController {
 
     @PostMapping("/{turmaId}/reservas")
     ResponseEntity<Void> reservar(@PathVariable UUID turmaId,
-                                  @RequestHeader("Idempotency-Key") String chave) {
-        turmas.reservarVaga(turmaId);   // TODO: deduplicar pela chave
+                                  @RequestHeader("Idempotency-Key") UUID chave) {
+        turmas.reservarVaga(turmaId, chave);   // a chave é o id da reserva: repetir não reserva de novo
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{turmaId}/liberacoes")
-    ResponseEntity<Void> liberar(@PathVariable UUID turmaId,
-                                 @RequestHeader("Idempotency-Key") String chave) {
-        turmas.liberarVaga(turmaId);    // TODO: deduplicar pela chave
+    @DeleteMapping("/{turmaId}/reservas/{reservaId}")
+    ResponseEntity<Void> liberar(@PathVariable UUID turmaId, @PathVariable UUID reservaId) {
+        turmas.liberarVaga(turmaId, reservaId);
         return ResponseEntity.noContent().build();
     }
 
@@ -46,5 +47,11 @@ class TurmasController {
     @ExceptionHandler(TurmaNaoEncontrada.class)
     ProblemDetail naoEncontrada(TurmaNaoEncontrada erro) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, erro.getMessage());
+    }
+
+    // Chave reaproveitada com outro conteúdo: erro de quem chama, nunca um sucesso silencioso.
+    @ExceptionHandler(ReservaConflitante.class)
+    ProblemDetail reservaConflitante(ReservaConflitante erro) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, erro.getMessage());
     }
 }
