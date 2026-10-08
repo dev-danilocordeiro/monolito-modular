@@ -1,0 +1,21 @@
+# Gradle / JVM
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+.kotlin/
+
+# Python
+__pycache__/
+.venv/
+.pytest_cache/
+*.egg-info/
+.import_linter_cache/
+
+# Go
+go/bin/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
