@@ -21,7 +21,7 @@ class RegistroDePublicacoesTest {
     @Autowired JdbcClient jdbc;
 
     @Test
-    void aPublicacaoEGravadaNaTransacaoDaMatriculaEConcluidaQuandoOOuvinteTermina() {
+    void cadaOuvinteGanhaUmaPublicacaoQueEConcluidaQuandoEleTermina() {
         var turma = UUID.randomUUID();
         jdbc.sql("INSERT INTO turmas.turmas (id, ano_letivo, capacidade) VALUES (:id, 2027, 10)").param("id", turma).update();
         var estudante = UUID.randomUUID();
@@ -31,11 +31,14 @@ class RegistroDePublicacoesTest {
         await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
             assertThat(jdbc.sql("SELECT count(*) FROM pedagogico.aprendizes WHERE id = :id")
                 .param("id", estudante).query(Integer.class).single()).isEqualTo(1);
+            // Uma linha por ouvinte: o pedagógico e o externalizador do Kafka.
             assertThat(jdbc.sql("""
-                    SELECT count(*) FROM event_publication
+                    SELECT listener_id FROM event_publication
                     WHERE serialized_event LIKE :estudante AND completion_date IS NOT NULL
                     """)
-                .param("estudante", "%" + estudante + "%").query(Integer.class).single()).isEqualTo(1);
+                .param("estudante", "%" + estudante + "%").query(String.class).list())
+                .hasSize(2)
+                .anyMatch(ouvinte -> ouvinte.contains("AoConfirmarMatricula"));
         });
     }
 }
