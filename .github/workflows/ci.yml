@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["passo-*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  kotlin:
+    name: kotlin (post 2)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kotlin
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v6
+      - run: ./gradlew test
+
+  python:
+    name: python (post 3)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pipx install "poetry>=2.2,<3"
+      - run: poetry install
+      - name: contratos do import-linter
+        run: poetry run lint-imports
+      - name: testes, incluindo as violações injetadas
+        run: poetry run pytest -v
+
+  go:
+    name: go ${{ matrix.go }} (post 3)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ["1.23", "stable"]
+    defaults:
+      run:
+        working-directory: go
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
+      - run: go vet ./...
+      - run: go build ./...
+      - run: go test ./...
+      - name: testes negativos (compilador e archtest)
+        run: ./testes-negativos.sh
+
+  java:
+    name: java (posts 3, 4 e 5)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: java
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v6
+      - run: ./gradlew test
+      - name: testes negativos (verify do Spring Modulith)
+        run: ./testes-negativos.sh
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: relatorios-java
+          path: java/**/build/reports/tests/
