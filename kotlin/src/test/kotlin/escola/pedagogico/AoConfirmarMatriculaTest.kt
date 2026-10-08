@@ -4,6 +4,7 @@ import escola.matricula.api.MatriculaConfirmada
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class AoConfirmarMatriculaTest {
 
@@ -36,5 +37,12 @@ class AoConfirmarMatriculaTest {
         )
 
         assertEquals(8.0, aprendiz.mediaPonderada())
+    }
+
+    @Test
+    fun `aprendiz sem avaliacoes ainda nao tem media`() {
+        val aprendiz = Aprendiz(AprendizId(UUID.randomUUID()), "Ana", emptyList(), 0)
+
+        assertNull(aprendiz.mediaPonderada())
     }
 }

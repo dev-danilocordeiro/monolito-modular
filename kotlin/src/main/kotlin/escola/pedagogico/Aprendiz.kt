@@ -11,8 +11,10 @@ data class Aprendiz(
     val avaliacoes: List<Avaliacao>,
     val faltas: Int,
 ) {
-    fun mediaPonderada(): Double =
-        avaliacoes.sumOf { it.nota * it.peso } / avaliacoes.sumOf { it.peso }
+    // Sem avaliações não existe média: null, em vez do NaN de 0.0 / 0.0
+    fun mediaPonderada(): Double? =
+        if (avaliacoes.isEmpty()) null
+        else avaliacoes.sumOf { it.nota * it.peso } / avaliacoes.sumOf { it.peso }
 }
 
 data class Avaliacao(val componente: String, val nota: Double, val peso: Double)
