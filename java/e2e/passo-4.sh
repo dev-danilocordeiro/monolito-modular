@@ -6,7 +6,9 @@ trap limpa EXIT
 
 ./gradlew bootJar -q
 docker compose up -d --build --wait postgres kafka > /dev/null
-docker compose up -d --build servico-turmas > /dev/null
+# No passo 4 o serviço usa o schema turmas do banco do monolito
+TURMAS_DB_URL=jdbc:postgresql://postgres:5432/escola TURMAS_DB_USUARIO=escola TURMAS_DB_SENHA=escola \
+  docker compose up -d --build servico-turmas > /dev/null
 espera_http "http://localhost:$SERVICO_TURMAS_PORTA/turmas"
 sobe_monolito remoto
 

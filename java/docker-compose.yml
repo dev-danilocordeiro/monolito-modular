@@ -1,6 +1,8 @@
 services:
   postgres:
     image: postgres:18-alpine
+    # Passo 5: wal_level=logical para replicar o schema turmas para o banco do serviço
+    command: ["postgres", "-c", "wal_level=logical"]
     environment:
       POSTGRES_DB: escola
       POSTGRES_USER: escola
@@ -9,6 +11,20 @@ services:
       - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U escola -d escola"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  postgres-turmas:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: turmas
+      POSTGRES_USER: turmas
+      POSTGRES_PASSWORD: turmas
+    ports:
+      - "${POSTGRES_TURMAS_PORTA:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U turmas -d turmas"]
       interval: 2s
       timeout: 3s
       retries: 30
@@ -38,11 +54,15 @@ services:
       - "${SERVICO_TURMAS_PORTA:-8081}:8080"
     environment:
       SERVER_PORT: 8080
-      # Passo 3: mesmo banco e mesmo schema turmas do monolito
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/escola
+      # Passo 5: banco próprio. Antes do corte, TURMAS_DB_URL aponta para o banco do monolito.
+      SPRING_DATASOURCE_URL: ${TURMAS_DB_URL:-jdbc:postgresql://postgres-turmas:5432/turmas}
+      SPRING_DATASOURCE_USERNAME: ${TURMAS_DB_USUARIO:-turmas}
+      SPRING_DATASOURCE_PASSWORD: ${TURMAS_DB_SENHA:-turmas}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       postgres:
+        condition: service_healthy
+      postgres-turmas:
         condition: service_healthy
       kafka:
         condition: service_started

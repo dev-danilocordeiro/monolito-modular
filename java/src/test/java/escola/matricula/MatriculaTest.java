@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.modulith.test.ApplicationModuleTest;
@@ -21,6 +22,7 @@ import org.springframework.modulith.test.Scenario;
 // DIRECT_DEPENDENCIES sobe também as dependências diretas declaradas no package-info.
 @ApplicationModuleTest(mode = BootstrapMode.DIRECT_DEPENDENCIES)
 @Import(TestcontainersConfiguration.class)
+@TestPropertySource(properties = "escola.turmas.modo=local")
 class MatriculaTest {
 
     static final UUID TURMA_COM_VAGA = UUID.randomUUID();

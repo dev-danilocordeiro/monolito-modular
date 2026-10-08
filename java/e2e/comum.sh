@@ -2,6 +2,7 @@
 set -euo pipefail
 
 export SERVICO_TURMAS_PORTA="${SERVICO_TURMAS_PORTA:-18081}"
+export POSTGRES_TURMAS_PORTA="${POSTGRES_TURMAS_PORTA:-15433}"
 MONOLITO_PORTA="${MONOLITO_PORTA:-18080}"
 MONOLITO_PID=""
 falhas=0
@@ -40,6 +41,6 @@ confere() {   # confere <descrição> <esperado> <obtido>
 
 limpa() {
   para_monolito
-  if [[ $falhas -gt 0 ]]; then docker compose logs --tail 80 servico-turmas || true; tail -80 build/monolito-*.log || true; fi
+  if [[ $falhas -gt 0 ]]; then docker compose logs --tail 80 servico-turmas || true; tail -n 80 build/monolito-*.log || true; fi
   docker compose down -v --remove-orphans > /dev/null 2>&1 || true
 }
