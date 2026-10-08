@@ -1,7 +1,7 @@
 package escola.matricula;
 
 import escola.matricula.internal.MatriculaRepository;
-import escola.turmas.TurmasService;
+import escola.turmas.TurmasApi;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,11 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MatriculaService {
 
-    private final TurmasService turmas;
+    private final TurmasApi turmas;
     private final MatriculaRepository matriculas;
     private final ApplicationEventPublisher eventos;
 
-    MatriculaService(TurmasService turmas, MatriculaRepository matriculas, ApplicationEventPublisher eventos) {
+    MatriculaService(TurmasApi turmas, MatriculaRepository matriculas, ApplicationEventPublisher eventos) {
         this.turmas = turmas;
         this.matriculas = matriculas;
         this.eventos = eventos;

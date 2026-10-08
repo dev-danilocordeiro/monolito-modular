@@ -1,23 +1,28 @@
-package escola.turmas;
+package escola.turmas.internal;
 
-import escola.turmas.internal.Turma;
-import escola.turmas.internal.TurmaRepository;
+import escola.turmas.TurmaNaoEncontrada;
+import escola.turmas.TurmaSemVaga;
+import escola.turmas.TurmasApi;
+import escola.turmas.VagasEsgotadas;
 import java.util.UUID;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class TurmasService {
+@ConditionalOnProperty(name = "escola.turmas.modo", havingValue = "local", matchIfMissing = true)
+class TurmasLocal implements TurmasApi {
 
     private final TurmaRepository turmas;
     private final ApplicationEventPublisher eventos;
 
-    TurmasService(TurmaRepository turmas, ApplicationEventPublisher eventos) {
+    TurmasLocal(TurmaRepository turmas, ApplicationEventPublisher eventos) {
         this.turmas = turmas;
         this.eventos = eventos;
     }
 
+    @Override
     @Transactional
     public void reservarVaga(UUID turmaId) {
         Turma turma = turmas.ocuparVaga(turmaId)
@@ -27,6 +32,7 @@ public class TurmasService {
         }
     }
 
+    @Override
     @Transactional
     public void liberarVaga(UUID turmaId) {
         if (!turmas.desocuparVaga(turmaId) && !turmas.existe(turmaId)) {

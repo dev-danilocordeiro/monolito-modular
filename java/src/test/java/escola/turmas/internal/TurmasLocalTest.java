@@ -1,8 +1,11 @@
-package escola.turmas;
+package escola.turmas.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import escola.TestcontainersConfiguration;
+import escola.turmas.TurmaSemVaga;
+import escola.turmas.TurmasApi;
+import escola.turmas.VagasEsgotadas;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -18,10 +21,15 @@ import org.springframework.modulith.test.AssertablePublishedEvents;
 
 @ApplicationModuleTest
 @Import(TestcontainersConfiguration.class)
-class TurmasServiceTest {
+class TurmasLocalTest {
 
-    @Autowired TurmasService turmas;
+    @Autowired TurmasApi turmas;
     @Autowired JdbcClient jdbc;
+
+    @Test
+    void semConfiguracaoOModoELocal() {
+        assertThat(turmas).isInstanceOf(TurmasLocal.class);
+    }
 
     @Test
     void reservasSimultaneasNuncaPassamDaCapacidade(AssertablePublishedEvents eventos) throws Exception {
