@@ -11,10 +11,10 @@ os exemplos funcionarem.
 
 | Post | Assunto | Pasta |
 | --- | --- | --- |
-| [2. DDD estratégico](docs/posts/02-ddd-estrategico-subdominios-bounded-contexts.mdx) | Um modelo por contexto, Published Language, ACL | [`kotlin/`](kotlin) |
-| [3. Fronteiras no CI](docs/posts/03-fronteiras-de-modulos-no-ci.mdx) | import-linter, Spring Modulith, `internal/` no Go | [`python/`](python), [`java/`](java) (tag `passo-0`), [`go/`](go) |
-| [4. Comunicação entre módulos](docs/posts/04-comunicacao-entre-modulos.mdx) | Eventos, registro de publicações, um schema por módulo | [`java/`](java) (tag `passo-0`) |
-| [5. Extraindo um módulo](docs/posts/05-extraindo-modulo-para-servico.mdx) | Extração de `turmas` em seis passos | [`java/`](java) (tags `passo-1` a `passo-6`) |
+| [2. DDD estratégico](docs/posts/ddd-estrategico-subdominios-bounded-contexts.mdx) | Um modelo por contexto, Published Language, ACL | [`kotlin/`](kotlin) |
+| [3. Fronteiras no CI](docs/posts/fronteiras-de-modulos-no-ci.mdx) | import-linter, Spring Modulith, `internal/` no Go | [`python/`](python), [`java/`](java) (tag `passo-0`), [`go/`](go) |
+| [4. Comunicação entre módulos](docs/posts/comunicacao-entre-modulos.mdx) | Eventos, registro de publicações, um schema por módulo | [`java/`](java) (tag `passo-0`) |
+| [5. Extraindo um módulo](docs/posts/extraindo-modulo-para-servico.mdx) | Extração de `turmas` em seis passos | [`java/`](java) (tags `passo-1` a `passo-6`) |
 
 ## Pré-requisitos
 
