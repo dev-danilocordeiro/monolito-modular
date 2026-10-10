@@ -21,15 +21,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /turmas/{id}", func(w http.ResponseWriter, r *http.Request) {
-		capacidade, err := strconv.Atoi(r.URL.Query().Get("capacidade"))
-		if err != nil {
-			http.Error(w, "capacidade inválida", http.StatusBadRequest)
-			return
-		}
-		t.AbrirTurma(r.PathValue("id"), capacidade)
-		w.WriteHeader(http.StatusCreated)
-	})
+	mux.HandleFunc("POST /turmas/{id}", abrirTurmaHandler(t))
 
 	mux.HandleFunc("POST /turmas/{id}/matriculas/{estudante}", func(w http.ResponseWriter, r *http.Request) {
 		err := m.Matricular(r.PathValue("estudante"), r.PathValue("id"), 2027)
@@ -47,6 +39,19 @@ func main() {
 	if err := novoServidor(":8080", mux).ListenAndServe(); err != nil {
 		slog.Error("servidor parou", "erro", err)
 		os.Exit(1)
+	}
+}
+
+// abrirTurmaHandler valida a capacidade na borda: precisa ser um inteiro > 0.
+func abrirTurmaHandler(t *turmas.Servico) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		capacidade, err := strconv.Atoi(r.URL.Query().Get("capacidade"))
+		if err != nil || capacidade <= 0 {
+			http.Error(w, "capacidade inválida", http.StatusBadRequest)
+			return
+		}
+		t.AbrirTurma(r.PathValue("id"), capacidade)
+		w.WriteHeader(http.StatusCreated)
 	}
 }
 
