@@ -1,0 +1,30 @@
+# CODEOWNERS de teste para o roteamento do Sentinela.
+# Os times @hayah/* são fictícios: o GitHub vai marcá-los como inválidos
+# (não existem numa organização), mas o Sentinela os resolve pelo sentinela.yaml.
+# Regra do GitHub: a última linha que casa vence.
+
+# Padrão: tudo que não tiver dono mais específico é da plataforma
+*                                           @hayah/plataforma
+
+# --- Acadêmico: matrícula, turmas e pedagógico, em todas as linguagens ---
+/go/internal/matricula/                     @hayah/academico
+/go/internal/turmas/                        @hayah/academico
+/java/src/main/java/escola/matricula/       @hayah/academico
+/java/src/main/java/escola/turmas/          @hayah/academico
+/java/src/main/java/escola/pedagogico/      @hayah/academico
+/java/servico-turmas/                       @hayah/academico
+/kotlin/src/main/kotlin/escola/matricula/   @hayah/academico
+/kotlin/src/main/kotlin/escola/pedagogico/  @hayah/academico
+/python/escola/modules/                     @hayah/academico
+
+# --- Financeiro: domínio sensível (paths bloqueados no gate) ---
+/go/internal/financeiro/                    @hayah/financeiro
+/kotlin/src/main/kotlin/escola/mensalidades/ @hayah/financeiro
+
+# --- Casos de borda que o resolvedor precisa tratar ---
+# Vários donos na mesma regra: primeiro é o principal, o segundo entra como inscrito
+/java/src/main/resources/db/                @hayah/plataforma @hayah/academico
+# Owner sem time mapeado no sentinela.yaml: deve gerar aviso no `config validate`
+/python/tests/                              @hayah/qa
+# Usuário individual: resolve para o time de que ele é membro
+/go/archtest/                               @dev-danilocordeiro
