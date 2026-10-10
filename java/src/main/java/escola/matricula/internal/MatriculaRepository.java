@@ -15,15 +15,22 @@ public class MatriculaRepository {
         this.jdbc = jdbc;
     }
 
-    /** Grava a matrícula; devolve false se já existe uma com o mesmo id (o mesmo pedido). */
-    public boolean save(Matricula matricula) {
-        return jdbc.sql("""
+    public Matricula save(Matricula matricula) {
+        jdbc.sql("""
                 INSERT INTO matricula.matriculas (id, estudante_id, turma_id, ano_letivo)
                 VALUES (:id, :estudanteId, :turmaId, :anoLetivo)
-                ON CONFLICT (id) DO NOTHING
                 """)
             .paramSource(matricula)
-            .update() == 1;
+            .update();
+        return matricula;
+    }
+
+    /** Trava o id até o fim da transação atual: outra transação com o mesmo id espera aqui. */
+    public void travar(UUID id) {
+        jdbc.sql("SELECT pg_advisory_xact_lock(:chave)")
+            .param("chave", id.getMostSignificantBits() ^ id.getLeastSignificantBits())
+            .query()
+            .listOfRows();
     }
 
     public Optional<Matricula> buscar(UUID id) {
