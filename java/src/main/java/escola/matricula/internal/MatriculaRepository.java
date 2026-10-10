@@ -1,6 +1,8 @@
 package escola.matricula.internal;
 
 import escola.matricula.Matricula;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
@@ -13,13 +15,21 @@ public class MatriculaRepository {
         this.jdbc = jdbc;
     }
 
-    public Matricula save(Matricula matricula) {
-        jdbc.sql("""
+    /** Grava a matrícula; devolve false se já existe uma com o mesmo id (o mesmo pedido). */
+    public boolean save(Matricula matricula) {
+        return jdbc.sql("""
                 INSERT INTO matricula.matriculas (id, estudante_id, turma_id, ano_letivo)
                 VALUES (:id, :estudanteId, :turmaId, :anoLetivo)
+                ON CONFLICT (id) DO NOTHING
                 """)
             .paramSource(matricula)
-            .update();
-        return matricula;
+            .update() == 1;
+    }
+
+    public Optional<Matricula> buscar(UUID id) {
+        return jdbc.sql("SELECT id, estudante_id, turma_id, ano_letivo FROM matricula.matriculas WHERE id = :id")
+            .param("id", id)
+            .query(Matricula.class)
+            .optional();
     }
 }

@@ -19,14 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 class MatriculaController {
 
     private final MatriculaService matriculas;
+    private final MatriculaRepository repositorio;
 
-    MatriculaController(MatriculaService matriculas) {
+    MatriculaController(MatriculaService matriculas, MatriculaRepository repositorio) {
         this.matriculas = matriculas;
+        this.repositorio = repositorio;
     }
 
     @PostMapping("/matriculas")
     @ResponseStatus(HttpStatus.CREATED)
     Matricula matricular(@RequestBody NovaMatricula pedido) {
+        // Pedido repetido não reserva outra vaga (o serviço é idempotente); a API segue respondendo 409.
+        if (repositorio.buscar(Matricula.idDo(pedido)).isPresent()) {
+            throw new DuplicateKeyException("estudante já matriculado nesta turma e ano letivo");
+        }
         return matriculas.matricular(pedido);
     }
 
