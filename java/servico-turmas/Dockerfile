@@ -3,6 +3,7 @@ FROM eclipse-temurin:21-jdk AS build
 WORKDIR /src
 COPY gradlew settings.gradle.kts build.gradle.kts ./
 COPY gradle gradle
+COPY turmas-api turmas-api
 COPY servico-turmas servico-turmas
 RUN ./gradlew :servico-turmas:bootJar --no-daemon -q
 

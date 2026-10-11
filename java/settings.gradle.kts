@@ -4,4 +4,5 @@ plugins {
 
 rootProject.name = "escola"
 
+include("turmas-api")
 include("servico-turmas")

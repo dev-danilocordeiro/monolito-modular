@@ -16,6 +16,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":turmas-api"))   // contrato compartilhado de turmas
     implementation(platform(SpringBootPlugin.BOM_COORDINATES))
     implementation(platform("org.springframework.modulith:spring-modulith-bom:2.1.1"))
 
