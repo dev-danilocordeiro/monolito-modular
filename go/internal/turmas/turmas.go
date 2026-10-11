@@ -8,6 +8,7 @@ import (
 )
 
 var ErrSemVaga = errors.New("turma sem vaga")
+var ErrNaoEncontrada = store.ErrNaoEncontrada
 
 type Servico struct {
 	store *store.Store

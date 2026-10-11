@@ -1,10 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/dev-danilocordeiro/monolito-modular/go/internal/matricula"
 	"github.com/dev-danilocordeiro/monolito-modular/go/internal/turmas"
 )
 
@@ -33,5 +38,25 @@ func TestAbrirTurmaValidaCapacidade(t *testing.T) {
 		if rec.Code != quer {
 			t.Errorf("capacidade=%q: status %d, quer %d", capacidade, rec.Code, quer)
 		}
+	}
+}
+
+func TestMatricularMapeiaErros(t *testing.T) {
+	var logs bytes.Buffer
+	defer slog.SetDefault(slog.Default())
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	casos := map[int]http.HandlerFunc{
+		404: matricularHandler(matricula.New(turmas.New()).Matricular, 2027),
+		500: matricularHandler(func(string, string, int) error { return errors.New("financeiro: segredo interno") }, 2027),
+	}
+	for quer, h := range casos {
+		rec := httptest.NewRecorder()
+		h(rec, httptest.NewRequest(http.MethodPost, "/turmas/x/matriculas/e1", nil))
+		if rec.Code != quer || strings.Contains(rec.Body.String(), "segredo") {
+			t.Errorf("status %d corpo %q, quer %d sem detalhes internos", rec.Code, rec.Body.String(), quer)
+		}
+	}
+	if !strings.Contains(logs.String(), "segredo interno") {
+		t.Errorf("erro inesperado não foi logado: %q", logs.String())
 	}
 }
