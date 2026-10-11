@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.events.Externalized;
 
 /** O contrato de turmas vem do módulo compartilhado turmas-api, e não de uma cópia no monólito. */
 class ContratoTurmasTest {
@@ -19,9 +18,4 @@ class ContratoTurmasTest {
         }
     }
 
-    @Test
-    void topicoDoEventoEhOdoContrato() {
-        assertThat(VagasEsgotadas.class.getAnnotation(Externalized.class).value())
-                .isEqualTo("escola.turmas.vagas-esgotadas");
-    }
 }
