@@ -14,8 +14,11 @@ import escola.turmas.TurmasApi;
 import java.net.SocketTimeoutException;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restclient.test.autoconfigure.RestClientTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -24,6 +27,7 @@ import org.springframework.transaction.support.AbstractPlatformTransactionManage
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@ExtendWith(OutputCaptureExtension.class)
 @RestClientTest(components = TurmasRemoto.class, properties = "escola.turmas.url=http://servico-turmas")
 class TurmasRemotoTest {
 
@@ -98,6 +102,35 @@ class TurmasRemotoTest {
             .isInstanceOf(RuntimeException.class);
 
         servico.verify();
+    }
+
+    @Test
+    void reservaRecusadaSeguidaDeRollbackNaoCompensa(CapturedOutput saida) {
+        esperaReserva().andRespond(withStatus(HttpStatus.CONFLICT));
+        assertThatThrownBy(() -> transacao().executeWithoutResult(tx -> turmas.reservarVaga(turma, reserva)))
+            .isInstanceOf(TurmaSemVaga.class);
+        servico.verify();   // um DELETE inesperado reprovaria aqui
+        assertThat(saida).doesNotContain("compensação falhou");
+    }
+
+    @Test
+    void liberarUmaReservaQueOServicoNaoConheceESucesso() {
+        servico.expect(method(HttpMethod.DELETE)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+        turmas.liberarVaga(turma, reserva);
+        servico.verify();
+    }
+
+    @Test
+    void seALiberacaoFalhaNoServicoACompensacaoContinuaAlarmando(CapturedOutput saida) {
+        esperaReserva().andRespond(withNoContent());
+        servico.expect(method(HttpMethod.DELETE)).andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+
+        transacao().executeWithoutResult(tx -> {
+            turmas.reservarVaga(turma, reserva);
+            tx.setRollbackOnly();
+        });
+
+        assertThat(saida).contains("compensação falhou");
     }
 
     private org.springframework.test.web.client.ResponseActions esperaReserva() {
