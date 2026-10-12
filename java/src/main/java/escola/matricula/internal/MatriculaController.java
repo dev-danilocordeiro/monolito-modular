@@ -6,6 +6,8 @@ import escola.matricula.NovaMatricula;
 import escola.turmas.ReservaConflitante;
 import escola.turmas.TurmaNaoEncontrada;
 import escola.turmas.TurmaSemVaga;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 class MatriculaController {
+
+    private static final Logger log = LoggerFactory.getLogger(MatriculaController.class);
 
     private final MatriculaService matriculas;
     private final MatriculaRepository repositorio;
@@ -36,9 +40,16 @@ class MatriculaController {
         return matriculas.matricular(pedido);
     }
 
-    @ExceptionHandler({TurmaSemVaga.class, DuplicateKeyException.class, ReservaConflitante.class})
+    @ExceptionHandler({TurmaSemVaga.class, ReservaConflitante.class})
     ProblemDetail conflito(RuntimeException erro) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, erro.getMessage());
+    }
+
+    // A mensagem vinda do banco pode trazer SQL, constraint e ids: fica só no log.
+    @ExceptionHandler(DuplicateKeyException.class)
+    ProblemDetail duplicada(DuplicateKeyException erro) {
+        log.warn("matrícula duplicada", erro);
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "matrícula já existe");
     }
 
     @ExceptionHandler(TurmaNaoEncontrada.class)
