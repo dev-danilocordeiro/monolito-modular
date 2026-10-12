@@ -39,9 +39,18 @@ class TurmasRemoto implements TurmasApi {
 
     @Override
     public void reservarVaga(UUID turmaId, UUID reservaId) {
-        // Registrada antes da chamada: se todas as tentativas estourarem o tempo, não dá
-        // para saber se o serviço reservou. Liberar com a mesma chave cobre os dois casos.
+        try {
+            reservar(turmaId, reservaId);
+        } catch (TurmaSemVaga | TurmaNaoEncontrada | ReservaConflitante recusada) {
+            throw recusada;   // recusa definitiva: a reserva não existe, não há o que compensar
+        } catch (RuntimeException ambigua) {
+            liberarSeATransacaoDesfizer(turmaId, reservaId);   // timeout ou 5xx: talvez tenha reservado
+            throw ambigua;
+        }
         liberarSeATransacaoDesfizer(turmaId, reservaId);
+    }
+
+    private void reservar(UUID turmaId, UUID reservaId) {
         retry.invoke(() -> http.post()
             .uri("/turmas/{id}/reservas", turmaId)
             .header("Idempotency-Key", reservaId.toString())   // estável: vem da tentativa de matrícula
@@ -58,6 +67,7 @@ class TurmasRemoto implements TurmasApi {
         retry.invoke(() -> http.delete()
             .uri("/turmas/{id}/reservas/{reserva}", turmaId, reservaId)
             .retrieve()
+            .onStatus(status -> status.isSameCodeAs(HttpStatus.NOT_FOUND), (req, res) -> { })   // já liberada: idempotente
             .toBodilessEntity());
     }
 
@@ -79,7 +89,7 @@ class TurmasRemoto implements TurmasApi {
                 try {
                     liberarVaga(turmaId, reservaId);
                 } catch (RuntimeException erro) {
-                    // Sem retry depois daqui: a vaga fica presa até alguém liberar com a mesma chave.
+                    // liberarVaga já esgotou as tentativas: a vaga fica presa até alguém liberar com a mesma chave.
                     log.atError()
                         .addKeyValue("turmaId", turmaId)
                         .addKeyValue("reservaId", reservaId)
